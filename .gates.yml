@@ -1,0 +1,43 @@
+# gateinitiative: Project Gate Definitions
+# These gates are enforced automatically when files change.
+# Place gates here or embed them in docs/agents/*.md files.
+#
+# Gate Format:
+#   id:          Unique identifier
+#   trigger:     Glob pattern for files this applies to
+#   severity:    block | warn | info
+#   pattern:     Regex — violation if FOUND (for detecting bad things)
+#   antipattern: Regex — violation if NOT found (for requiring good things)
+#   message:     Human-readable explanation
+#   exclude:     [optional] Glob patterns to skip
+
+---
+id: no-secrets-in-source
+trigger: "**/*.{ts,js,mjs,cjs,tsx,jsx,json,env}"
+severity: block
+pattern: /(sk-[a-zA-Z0-9]{20,}|pk_live_[a-zA-Z0-9]+|AKIA[A-Z0-9]{16}|ghp_[a-zA-Z0-9]{36})/
+message: "Potential API key or secret detected in source code"
+exclude: ["**/*.test.*", "**/*.spec.*", "**/node_modules/**"]
+
+---
+id: no-console-log-in-prod
+trigger: "src/**/*.{ts,tsx,js,jsx}"
+severity: warn
+pattern: /console\.(log|debug|info)\(/
+message: "console.log left in production code (use a proper logger)"
+exclude: ["**/*.test.*", "**/*.spec.*", "**/scripts/**"]
+
+---
+id: no-any-type
+trigger: "**/*.{ts,tsx}"
+severity: warn
+pattern: /:\s*any[\s;,)]/
+message: "Explicit 'any' type detected — use a specific type or 'unknown'"
+exclude: ["**/*.test.*", "**/*.d.ts"]
+
+---
+id: no-disabled-eslint
+trigger: "**/*.{ts,tsx,js,jsx}"
+severity: info
+pattern: /eslint-disable(?!-next-line)/
+message: "File-level eslint-disable found — prefer eslint-disable-next-line for specific rules"

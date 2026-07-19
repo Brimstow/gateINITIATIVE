@@ -1,0 +1,61 @@
+{
+  "name": "gateinitiative",
+  "version": "1.0.0",
+  "description": "Standalone filesystem-watcher enforcement daemon. IDE-agnostic, VCS-agnostic, CLI-agnostic. The gate initiative for AI-driven development.",
+  "type": "module",
+  "bin": {
+    "gateinit": "./bin/gateinit.mjs"
+  },
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "!src/**/*.test.mjs",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "start": "node bin/gateinit.mjs start",
+    "stop": "node bin/gateinit.mjs stop",
+    "restart": "node bin/gateinit.mjs restart",
+    "status": "node bin/gateinit.mjs status",
+    "watch": "node bin/gateinit.mjs watch",
+    "check": "node bin/gateinit.mjs check",
+    "test": "node --test \"src/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "chokidar": "^4.0.0",
+    "yaml": "^2.9.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "gateinitiative",
+    "gate-init",
+    "gate-init-initiative",
+    "enforcement",
+    "file-watcher",
+    "gates",
+    "policy",
+    "linting",
+    "agent-rules",
+    "daemon",
+    "ai-coding",
+    "outcome-level"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brimstow/gateINITIATIVE.git"
+  },
+  "homepage": "https://github.com/Brimstow/gateINITIATIVE#readme",
+  "bugs": {
+    "url": "https://github.com/Brimstow/gateINITIATIVE/issues"
+  }
+}

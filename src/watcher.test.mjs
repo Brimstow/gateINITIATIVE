@@ -1,0 +1,78 @@
+// gateinitiative: Watcher tests (chokidar v4 ignore/include semantics)
+// Run with: node --test src/watcher.test.mjs
+
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { writeFile, mkdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { createWatcher, getWatcherConfig, buildIgnoredFn } from './watcher.mjs';
+
+const TMP = join(process.cwd(), '.tmp-watcher-test');
+
+async function freshDir() {
+  await rm(TMP, { recursive: true, force: true });
+  await mkdir(join(TMP, 'node_modules', 'dep'), { recursive: true });
+  await mkdir(join(TMP, 'src'), { recursive: true });
+  await mkdir(join(TMP, 'dist'), { recursive: true });
+}
+
+async function cleanup() {
+  await rm(TMP, { recursive: true, force: true });
+}
+
+describe('buildIgnoredFn', () => {
+  it('prunes node_modules directories', () => {
+    const fn = buildIgnoredFn(TMP, ['**/node_modules/**']);
+    // Directory tested with trailing slash
+    assert.equal(fn(join(TMP, 'node_modules'), {}), true);
+    assert.equal(fn(join(TMP, 'node_modules', 'dep'), {}), true);
+    assert.equal(fn(join(TMP, 'src', 'app.ts'), { isFile: () => true }), false);
+  });
+
+  it('matches ignored file extensions', () => {
+    const fn = buildIgnoredFn(TMP, ['**/*.log']);
+    assert.equal(fn(join(TMP, 'app.log'), { isFile: () => true }), true);
+    assert.equal(fn(join(TMP, 'src', 'app.ts'), { isFile: () => true }), false);
+  });
+});
+
+describe('createWatcher (chokidar v4)', () => {
+  beforeEach(freshDir);
+  afterEach(cleanup);
+
+  it('emits events for included files and ignores node_modules', async () => {
+    const cfg = await getWatcherConfig(TMP);
+    const events = [];
+    const w = await createWatcher(cfg, (fp, ev) =>
+      events.push(ev + ' ' + fp.replace(/\\/g, '/').split('.tmp-watcher-test/')[1]));
+
+    await writeFile(join(TMP, 'src', 'app.ts'), 'const x = 1;\n');
+    await writeFile(join(TMP, 'node_modules', 'dep', 'index.js'), 'x\n');
+    await writeFile(join(TMP, 'dist', 'build.js'), 'x\n'); // dist is in DEFAULT_IGNORE
+    await new Promise(r => setTimeout(r, 800));
+
+    await w.close();
+
+    assert.ok(events.some(e => e.includes('src/app.ts')), 'src/app.ts event fired');
+    assert.equal(events.filter(e => e.includes('node_modules')).length, 0, 'node_modules ignored');
+    assert.equal(events.filter(e => e.includes('dist/')).length, 0, 'dist ignored');
+  });
+
+  it('respects include patterns (filters out non-matching files)', async () => {
+    const cfg = await getWatcherConfig(TMP);
+    // Override include to ts-only
+    cfg.include = ['**/*.ts'];
+    const events = [];
+    const w = await createWatcher(cfg, (fp, ev) =>
+      events.push(ev + ' ' + fp.replace(/\\/g, '/').split('.tmp-watcher-test/')[1]));
+
+    await writeFile(join(TMP, 'src', 'a.ts'), 'x\n');
+    await writeFile(join(TMP, 'src', 'b.js'), 'x\n');
+    await new Promise(r => setTimeout(r, 800));
+
+    await w.close();
+
+    assert.ok(events.some(e => e.includes('a.ts')));
+    assert.equal(events.filter(e => e.includes('b.js')).length, 0);
+  });
+});

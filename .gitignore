@@ -1,0 +1,11 @@
+# gateinitiative runtime artifacts
+node_modules/
+.gateinitiative/
+
+# gateinit bridge output (generated IDE rules files)
+.cursor/
+.rules
+.voidrules
+
+# third-party tooling artifacts
+.qoder/
