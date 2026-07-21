@@ -1,6 +1,7 @@
 # gateinitiative runtime artifacts
 node_modules/
 .gateinitiative/
+package-lock.json
 
 # gateinit bridge output (generated IDE rules files)
 .cursor/

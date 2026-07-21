@@ -63,6 +63,8 @@ export async function cmdWatch() {
       startedAt: new Date().toISOString(),
       mode: config.mode,
       root: projectRoot,
+      runtime: typeof Bun !== 'undefined' ? 'bun' : 'node',
+      runtimeVersion: typeof Bun !== 'undefined' ? Bun.version : process.version,
       nodeVersion: process.version,
     });
     await writeHeartbeat(runtimeDir);
