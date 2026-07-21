@@ -10,31 +10,33 @@ Watches your project files for changes and evaluates them against rules ("gates"
 ## Quick Start
 
 ```bash
-npm install
+bun install
 
 # Discover your project and generate gates/profile (interactive, non-destructive)
-node bin/gateinit.mjs onboard --dry-run
+bun bin/gateinit.mjs onboard --dry-run
 
 # Create starter gates
-node bin/gateinit.mjs init
+bun bin/gateinit.mjs init
 
 # List loaded gates
-node bin/gateinit.mjs list
+bun bin/gateinit.mjs list
 
 # Review and trust the current gate sources before strict enforcement
-node bin/gateinit.mjs trust
+bun bin/gateinit.mjs trust
 
 # One-shot check (CI/automation)
-node bin/gateinit.mjs check
+bun bin/gateinit.mjs check
 
 # Real-time watch (foreground, for debugging)
-node bin/gateinit.mjs watch
+bun bin/gateinit.mjs watch
 
 # Start as a background daemon
-node bin/gateinit.mjs start --mode strict
-node bin/gateinit.mjs status
-node bin/gateinit.mjs stop
+bun bin/gateinit.mjs start --mode strict
+bun bin/gateinit.mjs status
+bun bin/gateinit.mjs stop
 ```
+
+> **Node.js also works:** Replace `bun` with `node` and `bun install` with `npm install` in the commands above. The codebase is fully Node-compatible (Node >= 22.0.0).
 
 ## How It Works
 
@@ -196,10 +198,10 @@ Signals are written to `.gateinitiative/context.json` for external consumers, an
 
 ```bash
 # One-shot: generate .rules / .voidrules / .cursor/rules/*.mdc
-node bin/gateinit.mjs bridge --once
+bun bin/gateinit.mjs bridge --once
 
 # Watch mode: regenerate whenever context.json changes
-node bin/gateinit.mjs bridge
+bun bin/gateinit.mjs bridge
 ```
 
 The bridge only overwrites rules files it previously generated (marked with a header comment). Hand-written `.rules` files are never clobbered.
@@ -273,4 +275,5 @@ To survive reboots, run `gateinit start --register`. It prints platform-specific
 
 ## Requirements
 
-- Node.js >= 22.0.0
+- **Bun** >= 1.3.5 (recommended) — used as the package manager and test runner
+- **Node.js** >= 22.0.0 (compatible alternative — the codebase runs under either runtime)

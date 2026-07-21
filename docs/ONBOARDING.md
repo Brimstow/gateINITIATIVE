@@ -133,16 +133,16 @@ subdirectory, so they only fire on files inside `packages/api/`.
 
 ```bash
 # Preview everything, write nothing
-node bin/gateinit.mjs onboard --dry-run
+bun bin/gateinit.mjs onboard --dry-run
 
 # Non-interactive run (no managed blocks in instruction files)
-node bin/gateinit.mjs onboard --yes
+bun bin/gateinit.mjs onboard --yes
 
 # Interactive run
-node bin/gateinit.mjs onboard
+bun bin/gateinit.mjs onboard
 
 # Use a different project root
-node bin/gateinit.mjs onboard --root ./another-project
+bun bin/gateinit.mjs onboard --root ./another-project
 ```
 
 ## Recovery
