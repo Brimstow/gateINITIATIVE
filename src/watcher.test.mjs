@@ -20,6 +20,22 @@ async function cleanup() {
   await rm(TMP, { recursive: true, force: true });
 }
 
+// CI-deterministic event wait. The old harness slept a fixed 800ms and hoped
+// the events had arrived, which raced on slow CI runners (failed runs of
+// 2026-07-21 on ubuntu/macos). Instead: poll until the expected event shows
+// up (generous deadline), then hold a short settle window so the negative
+// (absence) assertions still get a fair chance to observe misbehavior. If
+// the event never arrives, the caller's positive assertion fails — real
+// regressions are still caught, just without the race.
+async function waitForEvents(events, predicate, deadlineMs = 10_000) {
+  const start = Date.now();
+  while (!predicate(events)) {
+    if (Date.now() - start > deadlineMs) return;
+    await new Promise(r => setTimeout(r, 25));
+  }
+  await new Promise(r => setTimeout(r, 500));
+}
+
 describe('buildIgnoredFn', () => {
   it('prunes node_modules directories', () => {
     const fn = buildIgnoredFn(TMP, ['**/node_modules/**']);
@@ -49,7 +65,7 @@ describe('createWatcher (chokidar v4)', () => {
     await writeFile(join(TMP, 'src', 'app.ts'), 'const x = 1;\n');
     await writeFile(join(TMP, 'node_modules', 'dep', 'index.js'), 'x\n');
     await writeFile(join(TMP, 'dist', 'build.js'), 'x\n'); // dist is in DEFAULT_IGNORE
-    await new Promise(r => setTimeout(r, 800));
+    await waitForEvents(events, evs => evs.some(e => e.includes('src/app.ts')));
 
     await w.close();
 
@@ -68,7 +84,7 @@ describe('createWatcher (chokidar v4)', () => {
 
     await writeFile(join(TMP, 'src', 'a.ts'), 'x\n');
     await writeFile(join(TMP, 'src', 'b.js'), 'x\n');
-    await new Promise(r => setTimeout(r, 800));
+    await waitForEvents(events, evs => evs.some(e => e.includes('a.ts')));
 
     await w.close();
 

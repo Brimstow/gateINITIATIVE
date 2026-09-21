@@ -376,8 +376,15 @@ describe('Enforcer', () => {
     await enforcer.initShadows([file], gates, safe);
     const elapsed = Date.now() - start;
 
-    // Should complete within a small multiple of the timeout, not hang
-    assert.ok(elapsed < 1000, `initShadows took ${elapsed}ms — possible ReDoS stall`);
+    // Hang-detector, not a benchmark. The 50ms budget bounds regex execution
+    // inside the worker, but total elapsed also includes worker-thread
+    // startup, which on slow CI runners (windows-latest, 2026-07-21) can
+    // exceed 1s on its own. A genuine unbounded stall runs for minutes, and
+    // if the worker path ever fell back to in-process evaluation this test
+    // would hang outright regardless of any wall-clock assert — so 15s
+    // separates "slow spawn" from a real stall with a wide margin. The
+    // functional asserts below carry the actual behavior.
+    assert.ok(elapsed < 15_000, `initShadows took ${elapsed}ms — possible ReDoS stall`);
     // Gate should have been poisoned (no baseline seeded for this file)
     assert.ok(safe.poisonedGateIds.includes('redos'));
     assert.equal(await enforcer.shadow.has(file), false);

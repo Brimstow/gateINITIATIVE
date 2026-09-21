@@ -3,6 +3,11 @@
 All notable changes to gateINITIATIVE are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- **CI stability.** Three timing-sensitive tests flaked on slow shared CI runners (the failed runs of 2026-07-21, one per OS): the watcher tests slept a fixed 800ms before asserting watcher events, and the ReDoS guard test asserted a 1s wall-clock budget that measured worker-thread spawn speed, not ReDoS safety. Waits are now event-driven with a 10s deadline (plus a settle window for absence assertions) and the ReDoS bound is a 15s hang-detector. No functional assertion was weakened.
+
 ## [1.0.0] — 2026-07-19
 
 > **Launch rebrand.** Project repositions as **gateINITIATIVE** — *the gate initiative for AI-driven development*. Pre-publication relaunch: zero installed users, hard cutover, no migration shim.
