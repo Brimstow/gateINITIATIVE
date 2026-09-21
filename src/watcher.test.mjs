@@ -56,7 +56,9 @@ describe('createWatcher (chokidar v4)', () => {
   beforeEach(freshDir);
   afterEach(cleanup);
 
-  it('emits events for included files and ignores node_modules', async () => {
+  // { timeout: 20_000 } — bun's default per-test cap is 5s; slow CI runners
+  // can legitimately take longer than that to deliver the first fs event.
+  it('emits events for included files and ignores node_modules', { timeout: 20_000 }, async () => {
     const cfg = await getWatcherConfig(TMP);
     const events = [];
     const w = await createWatcher(cfg, (fp, ev) =>
@@ -74,7 +76,7 @@ describe('createWatcher (chokidar v4)', () => {
     assert.equal(events.filter(e => e.includes('dist/')).length, 0, 'dist ignored');
   });
 
-  it('respects include patterns (filters out non-matching files)', async () => {
+  it('respects include patterns (filters out non-matching files)', { timeout: 20_000 }, async () => {
     const cfg = await getWatcherConfig(TMP);
     // Override include to ts-only
     cfg.include = ['**/*.ts'];

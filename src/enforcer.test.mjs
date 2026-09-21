@@ -360,7 +360,9 @@ describe('Enforcer', () => {
     }
   });
 
-  it('initShadows() survives a pathological ReDoS gate (1.12)', async () => {
+  // { timeout: 30_000 } — bun's default per-test cap is 5s, which would abort
+  // the 15s hang-detector budget below before it could ever be measured.
+  it('initShadows() survives a pathological ReDoS gate (1.12)', { timeout: 30_000 }, async () => {
     const { SafeEvaluator } = await import('./safe-eval.mjs');
     const enforcer = new Enforcer({ projectRoot: TMP, shadowDir: TMP, mode: 'strict', output: () => {} });
     const file = join(TMP, 'src', 'redos.ts');
