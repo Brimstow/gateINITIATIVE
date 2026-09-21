@@ -9,11 +9,19 @@ import { createWatcher, getWatcherConfig, buildIgnoredFn } from './watcher.mjs';
 
 const TMP = join(process.cwd(), '.tmp-watcher-test');
 
+// Each test watches its own never-before-used subdirectory. Re-watching the
+// same rm+recreated path from a second chokidar instance reliably produced
+// zero events on bun 1.3.5/Linux (the 2026-09-21 ubuntu failures) — a scenario
+// the real daemon never runs (it watches one live root for its whole life).
+let dirSeq = 0;
+let WATCH_ROOT = TMP;
+
 async function freshDir() {
   await rm(TMP, { recursive: true, force: true });
-  await mkdir(join(TMP, 'node_modules', 'dep'), { recursive: true });
-  await mkdir(join(TMP, 'src'), { recursive: true });
-  await mkdir(join(TMP, 'dist'), { recursive: true });
+  WATCH_ROOT = join(TMP, `w${++dirSeq}`);
+  await mkdir(join(WATCH_ROOT, 'node_modules', 'dep'), { recursive: true });
+  await mkdir(join(WATCH_ROOT, 'src'), { recursive: true });
+  await mkdir(join(WATCH_ROOT, 'dist'), { recursive: true });
 }
 
 async function cleanup() {
@@ -59,14 +67,14 @@ describe('createWatcher (chokidar v4)', () => {
   // { timeout: 20_000 } — bun's default per-test cap is 5s; slow CI runners
   // can legitimately take longer than that to deliver the first fs event.
   it('emits events for included files and ignores node_modules', { timeout: 20_000 }, async () => {
-    const cfg = await getWatcherConfig(TMP);
+    const cfg = await getWatcherConfig(WATCH_ROOT);
     const events = [];
     const w = await createWatcher(cfg, (fp, ev) =>
       events.push(ev + ' ' + fp.replace(/\\/g, '/').split('.tmp-watcher-test/')[1]));
 
-    await writeFile(join(TMP, 'src', 'app.ts'), 'const x = 1;\n');
-    await writeFile(join(TMP, 'node_modules', 'dep', 'index.js'), 'x\n');
-    await writeFile(join(TMP, 'dist', 'build.js'), 'x\n'); // dist is in DEFAULT_IGNORE
+    await writeFile(join(WATCH_ROOT, 'src', 'app.ts'), 'const x = 1;\n');
+    await writeFile(join(WATCH_ROOT, 'node_modules', 'dep', 'index.js'), 'x\n');
+    await writeFile(join(WATCH_ROOT, 'dist', 'build.js'), 'x\n'); // dist is in DEFAULT_IGNORE
     await waitForEvents(events, evs => evs.some(e => e.includes('src/app.ts')));
 
     await w.close();
@@ -77,15 +85,15 @@ describe('createWatcher (chokidar v4)', () => {
   });
 
   it('respects include patterns (filters out non-matching files)', { timeout: 20_000 }, async () => {
-    const cfg = await getWatcherConfig(TMP);
+    const cfg = await getWatcherConfig(WATCH_ROOT);
     // Override include to ts-only
     cfg.include = ['**/*.ts'];
     const events = [];
     const w = await createWatcher(cfg, (fp, ev) =>
       events.push(ev + ' ' + fp.replace(/\\/g, '/').split('.tmp-watcher-test/')[1]));
 
-    await writeFile(join(TMP, 'src', 'a.ts'), 'x\n');
-    await writeFile(join(TMP, 'src', 'b.js'), 'x\n');
+    await writeFile(join(WATCH_ROOT, 'src', 'a.ts'), 'x\n');
+    await writeFile(join(WATCH_ROOT, 'src', 'b.js'), 'x\n');
     await waitForEvents(events, evs => evs.some(e => e.includes('a.ts')));
 
     await w.close();
